@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     public bool IsInputComplete = false;
     public int TargetNumber;
     public int StageLevel;
+    public int Score;
 
     [Header("UI")]
     [SerializeField] TMP_Text targetNumberText;
@@ -39,6 +40,7 @@ public class GameManager : MonoBehaviour
             // 초기화
             IsDie = false;
             StageLevel = 1;
+            Score = 0;
 
             // 플레이어 등장
 
