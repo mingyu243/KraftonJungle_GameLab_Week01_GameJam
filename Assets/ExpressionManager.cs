@@ -1,0 +1,84 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;
+using UnityEngine;
+
+public class ExpressionManager : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] CardSlotManager cardSlotManager;
+    List<CardSlot> CardSlotList => cardSlotManager.CardSlotList;
+
+    DataTable dataTable = new DataTable();
+
+    // 수식이 계산 가능한지
+    public bool IsValidExpression()
+    {
+        string expression = GetExpression();
+
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return false;
+        }
+
+        try
+        {
+            dataTable.Compute(expression, string.Empty);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // 수식이 정답인지
+    public bool CheckAnswer(int answer)
+    {
+        return (answer == GameManager.Instance.TargetNumber);
+    }
+
+    // 수식 결과
+    public int GetExpressionResult()
+    {
+        string expression = GetExpression();
+        int result = Convert.ToInt32(dataTable.Compute(expression, string.Empty));
+
+        return result;
+    }
+
+    string GetExpression()
+    {
+        StringBuilder expressionStr = new StringBuilder();
+
+        foreach (CardSlot slot in CardSlotList)
+        {
+            if (slot.Card != null)
+            {
+                string s = string.Empty;
+                switch (slot.Card.CardData.CardType)
+                {
+                    case CardType.None: break;
+                    case CardType.Number1: s = "1"; break;
+                    case CardType.Number2: s = "2"; break;
+                    case CardType.Number3: s = "3"; break;
+                    case CardType.Number4: s = "4"; break;
+                    case CardType.Number5: s = "5"; break;
+                    case CardType.Number6: s = "6"; break;
+                    case CardType.Number7: s = "7"; break;
+                    case CardType.Number8: s = "8"; break;
+                    case CardType.Number9: s = "9"; break;
+                    case CardType.Plus: s = "+"; break;
+                    case CardType.Minus: s = "-"; break;
+                    case CardType.Multiply: s = "*"; break;
+                    default:
+                        break;
+                }
+                expressionStr.Append(s);
+            }
+        }
+
+        return expressionStr.ToString();
+    }
+}

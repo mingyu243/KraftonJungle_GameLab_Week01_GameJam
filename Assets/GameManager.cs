@@ -1,12 +1,26 @@
 using Cysharp.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    [SerializeField] CardSlotsManager cardSlotsManager;
+    [Header("InGame")]
+    public bool IsDie = false;
+    public bool IsInputComplete = false;
+    public int TargetNumber;
+    public int StageLevel;
+
+    [Header("UI")]
+    [SerializeField] TMP_Text targetNumberText;
+    [SerializeField] GameObject enterButton;
+
+    [Header("References")]
+    [SerializeField] CardSlotManager cardSlotManager;
     [SerializeField] CardBoardManager cardBoardManager;
+    [SerializeField] CalculationSequenceManager calculationSequenceManager;
+    [SerializeField] InfoBoardManager infoBoardManager;
 
     void Awake()
     {
@@ -22,18 +36,41 @@ public class GameManager : MonoBehaviour
     {
         UniTask.Void(async () =>
         {
-            // 카드 깔기
-            cardBoardManager.SetupCards();
+            // 초기화
+            IsDie = false;
+            StageLevel = 1;
 
-            // 플레이어가 수식 완료하거나 죽는 조건이 될 때까지 대기
+            // 플레이어 등장
 
-            // 계산 연출
+            // 플레이어가 죽을 때까지 스테이지 반복
+            while (!IsDie)
+            {
+                IsInputComplete = false;
 
-            // 공격 연출
+                // 적 등장
 
-            // 적이 죽으면 다시 생성
 
-            // 다시 죽을때까지 반복
+                // 카드 깔기
+                cardBoardManager.SetupCards();
+
+                // 랜덤 숫자 지정
+                TargetNumber = 100;
+                targetNumberText.text = $"{TargetNumber} 만들기";
+
+                // 버튼 활성화
+                enterButton.SetActive(true);
+
+                // 플레이어 입력 판정이 들어올 때까지 대기
+                await UniTask.WaitUntil(() => IsInputComplete);
+
+                // 버튼 비활성화
+                enterButton.SetActive(false);
+
+                // 연출
+                await calculationSequenceManager.PlayAsync();
+            }
+
+            // 게임 오버
 
             await UniTask.CompletedTask;
         });

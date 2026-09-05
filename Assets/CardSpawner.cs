@@ -36,10 +36,38 @@ public class CardSpawner : MonoBehaviour
 
     public Card SpawnRandom()
     {
-        return Instantiate(cardPrefab);
+        return Spawn(CreateRandomCardData());
     }
-    public Card Spawn(CardData cardData)
+
+    public Card Spawn(CardData newCardData)
     {
-        return null;
+        Card newCard = Instantiate(cardPrefab);
+        newCard.CardData = newCardData;
+        newCard.UpdateUI();
+
+        return newCard;
+    }
+
+    CardData CreateRandomCardData()
+    {
+        CardData newCardData = new CardData();
+
+        int category = Random.Range(0, 2);
+        if (category == 0)
+        {
+            newCardData.CardCategory = CardCategory.Number;
+
+            int type = Random.Range(1, 10);
+            newCardData.CardType = (CardType)type;
+        }
+        else
+        {
+            newCardData.CardCategory = CardCategory.Operator;
+
+            int type = Random.Range(10, 13);
+            newCardData.CardType = (CardType)type;
+        }
+
+        return newCardData;
     }
 }

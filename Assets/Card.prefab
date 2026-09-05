@@ -264,9 +264,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CardData:
+    CardCategory: 0
     CardType: 0
-    Number: 0
-    OperatorType: 0
+  text: {fileID: 2924421286739791721}
 --- !u!114 &505474636586622229
 MonoBehaviour:
   m_ObjectHideFlags: 0
