@@ -21,7 +21,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] CardSlotManager cardSlotManager;
     [SerializeField] CardBoardManager cardBoardManager;
     [SerializeField] CalculationSequenceManager calculationSequenceManager;
-    [SerializeField] InfoBoardManager infoBoardManager;
 
     void Awake()
     {
