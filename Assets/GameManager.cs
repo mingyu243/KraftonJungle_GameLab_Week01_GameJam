@@ -139,13 +139,13 @@ public class GameManager : MonoBehaviour
                 enterButton.GetComponent<Button>().interactable = false;
                 enterButton.SetActive(true);
 
+                player.Atk = 0;
+
                 // UI 올리기
                 await screenView.DOAnchorPosY(600f, 1.5f).SetEase(Ease.OutQuart).ToUniTask();
 
                 // 스코어 초기화
                 scoreManager.Init();
-
-                player.Atk = 0;
 
                 blockClick.blocksRaycasts = true;
 
@@ -198,24 +198,23 @@ public class GameManager : MonoBehaviour
 
         if (stage == 1)
         {
-            targetHP = 20;
+            return 20;
         }
         else if (stage == 2)
         {
-            targetHP = Mathf.RoundToInt(60f * Mathf.Pow(1.3f, stage - 1));
+            return 60;
         }
-        else if (stage <= 10)
+        else if (stage <= 5)
         {
-            float baseHP = 150f;
-            targetHP = Mathf.RoundToInt(baseHP * Mathf.Pow(1.35f, stage - 1));
+            float baseHP = 80f;
+            targetHP = Mathf.RoundToInt(baseHP * Mathf.Pow(1.25f, stage - 1));
         }
         else
         {
-            // 11단계 이상부터는 10단계의 값을 기준으로 선형 증가하도록 수정
-            int baseAt10 = Mathf.RoundToInt(150f * Mathf.Pow(1.35f, 9)); // 약 2220
-            int extraStage = stage - 10;
+            int baseAt5 = Mathf.RoundToInt(80f * Mathf.Pow(1.25f, 4));
+            int extraStage = stage - 5;
 
-            targetHP = baseAt10 + (extraStage * 12000);
+            targetHP = baseAt5 + (extraStage * 700);
         }
 
         return targetHP;
