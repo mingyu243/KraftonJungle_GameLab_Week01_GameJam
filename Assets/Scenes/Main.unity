@@ -4767,7 +4767,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Life: 2
-  TimeScale: 3
+  TimeScale: 1
   ScoreFullSlotAddMulBonus: 50
   ScorePlusMinusAddMulBonus: 2
   ScoreMulMulMulBonus: 2
