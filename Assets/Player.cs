@@ -44,7 +44,7 @@ public class Player : MonoBehaviour
         anim.SetTrigger("Attack1");
 
         // 타격까지 걸리는 시간
-        await UniTask.WaitForSeconds(3.67f);
+        await UniTask.WaitForSeconds(2.85f);
     }
 
     public async UniTask TakeDamageAnimAsync()

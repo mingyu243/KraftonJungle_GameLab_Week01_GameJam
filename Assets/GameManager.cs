@@ -1,7 +1,6 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,6 +12,11 @@ public class GameManager : MonoBehaviour
     [Header("Settings")]
     public int Life = 3;
     [Range(0, 3)] public int TimeScale = 1;
+    public int ScoreFullSlotAddMulBonus = 50;
+    public int ScorePlusMinusAddMulBonus = 2;
+    public int ScoreMulMulMulBonus = 2;
+    public int ScorePairMulMulBonus = 2;
+    public int ScoreTripleMulMulBonus = 5;
 
     [Header("InGame")]
     public bool IsInputExpressionComplete = false;
@@ -26,8 +30,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject enterButton;
     [SerializeField] CanvasGroup blockClick;
     [SerializeField] RectTransform screenView;
-    [SerializeField] TMP_Text scoreText;
+    [SerializeField] TMP_Text scoreBonusText;
     [SerializeField] GameObject retryButton;
+    [SerializeField] GameObject helpButton;
 
     [Header("References")]
     public Player player;
@@ -61,7 +66,7 @@ public class GameManager : MonoBehaviour
         player.Atk = 0;
         player.Health = Life;
         enemy.Atk = 1;
-        scoreText.text = "계산 히어로";
+        scoreBonusText.text = "계산 히어로";
 
         // 준비 단계
         player.gameObject.SetActive(false);
@@ -71,6 +76,7 @@ public class GameManager : MonoBehaviour
         stageLevelText.text = string.Empty;
         enterButton.GetComponent<Button>().interactable = false;
         blockClick.blocksRaycasts = false;
+        helpButton.SetActive(false);
 
         // 액션 뷰
         screenView.offsetMin = new Vector2(0f, -600f);
@@ -86,7 +92,7 @@ public class GameManager : MonoBehaviour
                 await player.SpawnAsync();
 
                 // 적 등장
-                enemy.Health = 100;
+                enemy.Health = GetRandomEnemyHP(StageLevel);
                 await enemy.SpawnAsync();
 
                 await UniTask.WaitForSeconds(2f);
@@ -105,12 +111,12 @@ public class GameManager : MonoBehaviour
                 // 적이 죽어있으면
                 if (enemy.Health <= 0)
                 {
-                    // 적 등장
-                    enemy.Health = 100;
-                    await enemy.SpawnAsync();
-
                     // 스테이지 넘어감
                     StageLevel++;
+
+                    // 적 등장
+                    enemy.Health = GetRandomEnemyHP(StageLevel);
+                    await enemy.SpawnAsync();
                 }
 
                 await UniTask.WaitForSeconds(0.5f);
@@ -119,11 +125,14 @@ public class GameManager : MonoBehaviour
                 stageLevelText.text = $"Stage {StageLevel}";
                 infoBoard.SetActive(true);
 
+                // 도움말 버튼
+                helpButton.SetActive(true);
+
                 // 카드 깔기
                 cardBoardManager.SetupCards();
 
                 // 랜덤 숫자 지정
-                TargetNumber = Random.Range(50, 151);
+                TargetNumber = GetRandomTargetNumber(StageLevel);
                 targetNumberText.text = $"{TargetNumber} 만들기";
 
                 // 버튼 활성화
@@ -154,7 +163,7 @@ public class GameManager : MonoBehaviour
             }
 
             // 게임 오버
-            scoreText.text = "게임 오버";
+            scoreBonusText.text = "게임 오버";
             blockClick.blocksRaycasts = true;
             retryButton.gameObject.SetActive(true);
 
@@ -174,5 +183,44 @@ public class GameManager : MonoBehaviour
     public void OnClickRetryButton()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    int GetRandomTargetNumber(int stage)
+    {
+        float baseTarget = 30 + (stage * 6);
+        int target = Mathf.RoundToInt(baseTarget + Random.Range(-5f, 5f));
+        return Mathf.Clamp(target, 20, 120);
+    }
+
+    int GetRandomEnemyHP(int stage)
+    {
+        int targetHP = 0;
+
+        if (stage == 1)
+        {
+            targetHP = 20;
+        }
+        else if (stage <= 2)
+        {
+            // 의도: 평균보다 못해도(대충 쳐도) 무조건 한 방에 잡히는 넉넉한 샌드박스 구간
+            targetHP = Mathf.RoundToInt(60f * Mathf.Pow(1.3f, stage - 1));
+        }
+        else if (stage <= 10)
+        {
+            // 의도: 몬스터 체력이 점차 올라가며, '딱 평균 정도'의 수식을 완성해야 한 방에 잡히는 구간
+            float baseHP = 150f;
+            targetHP = Mathf.RoundToInt(baseHP * Mathf.Pow(1.35f, stage - 1));
+        }
+        else
+        {
+            // 의도: 몬스터 체력이 확 뛰는 게 아니라 완만하게 오르므로, 
+            // 플레이어가 평균보다 조금 더 잘 쳐주거나(중고점) 빌드를 갖추면 계속 밀고 나갈 수 있는 구간
+            int extraStage = stage - 15;
+            int baseAt15 = Mathf.RoundToInt(150f * Mathf.Pow(1.35f, 14));
+
+            targetHP = baseAt15 + (extraStage * 12000);
+        }
+
+        return targetHP;
     }
 }

@@ -156,9 +156,17 @@ public class CardDragHandler : MonoBehaviour
         {
             if (tempCards[i] != null)
             {
-                int originIndex = previewCardSlotIndexDict[tempCards[i]].Item1;
-                int previewIndex = previewCardSlotIndexDict[tempCards[i]].Item2;
-                CardSlotList[previewIndex].SetCard(tempCards[originIndex]);
+                // 딕셔너리에 키가 있는지 안전하게 체크 (TryGetValue 사용)
+                if (previewCardSlotIndexDict.TryGetValue(tempCards[i], out var indexTuple))
+                {
+                    int originIndex = indexTuple.Item1;
+                    int previewIndex = indexTuple.Item2;
+                    CardSlotList[previewIndex].SetCard(tempCards[originIndex]);
+                }
+                else
+                {
+                    CardSlotList[i].SetCard(tempCards[i]);
+                }
             }
         }
 

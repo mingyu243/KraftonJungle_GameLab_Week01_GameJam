@@ -19,7 +19,7 @@ public class ScoreBonusPop : MonoBehaviour
         boxImage.transform.DOLocalRotate(new Vector3(0, 0, -405f), 0.8f, RotateMode.FastBeyond360).ToUniTask().Forget();
 
         await UniTask.WhenAll(
-            this.transform.DOLocalMoveY(this.transform.localPosition.y + 100f, 0.2f).ToUniTask(),
+            this.transform.DOLocalMoveY(this.transform.localPosition.y + 130f, 0.2f).ToUniTask(),
             canvasGroup.DOFade(1, 0.2f).ToUniTask()
         );
 
