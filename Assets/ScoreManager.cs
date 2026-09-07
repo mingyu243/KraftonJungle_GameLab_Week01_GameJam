@@ -29,6 +29,11 @@ public class ScoreManager : MonoBehaviour
         scoreBonusText.text = $"{sumBonus} x {mulBonus}";
     }
 
+    public void ClearScoreBonusText()
+    {
+        scoreBonusText.text = string.Empty;
+    }
+
     public void AddSumBonus(int value, Transform bonusPopPoint)
     {
         sumBonus += value;

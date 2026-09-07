@@ -7,8 +7,8 @@ public class CardSpawner : MonoBehaviour
     [SerializeField] Card cardPrefab;
 
     [SerializeField] Transform spawnParentTr;
-    [SerializeField] Transform startPoint; // 첫줄 가로 시작
-    [SerializeField] Transform endPoint; // 첫줄 가로 끝
+    [SerializeField] RectTransform startPoint; // 첫줄 가로 시작
+    [SerializeField] RectTransform endPoint; // 첫줄 가로 끝
     [Space]
     [SerializeField] int spawnColCount = 14;
     [SerializeField] int spawnRowCount = 2;
@@ -54,7 +54,7 @@ public class CardSpawner : MonoBehaviour
         float colGap = 0f;
         if (spawnColCount > 1)
         {
-            colGap = (endPoint.position.x - startPoint.position.x) / (spawnColCount - 1);
+            colGap = (endPoint.anchoredPosition.x - startPoint.anchoredPosition.x) / (spawnColCount - 1);
         }
 
         for (int r = 0; r < spawnRowCount; r++)
@@ -63,8 +63,8 @@ public class CardSpawner : MonoBehaviour
             {
                 Card card = newCardList[(r * spawnColCount) + c];
 
-                Vector3 spawnPos = startPoint.position + new Vector3(colGap * c, -rowSpacing * r, 0);
-                card.transform.position = spawnPos;
+                Vector3 spawnPos = startPoint.anchoredPosition + new Vector2(colGap * c, -rowSpacing * r);
+                card.GetComponent<RectTransform>().anchoredPosition = spawnPos;
             }
         }
 
@@ -75,6 +75,7 @@ public class CardSpawner : MonoBehaviour
     {
         Card newCard = Instantiate(cardPrefab);
         newCard.transform.SetParent(spawnParentTr);
+        newCard.transform.localScale = Vector3.one;
         newCard.CardData = newCardData;
         newCard.UpdateUI();
 

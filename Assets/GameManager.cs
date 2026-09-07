@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     [Header("Settings")]
-    public int Life = 3;
+    public int Life = 2;
     [Range(0, 3)] public int TimeScale = 1;
     public int ScoreFullSlotAddMulBonus = 50;
     public int ScorePlusMinusAddMulBonus = 2;
@@ -200,25 +200,22 @@ public class GameManager : MonoBehaviour
         {
             targetHP = 20;
         }
-        else if (stage <= 2)
+        else if (stage == 2)
         {
-            // 의도: 평균보다 못해도(대충 쳐도) 무조건 한 방에 잡히는 넉넉한 샌드박스 구간
             targetHP = Mathf.RoundToInt(60f * Mathf.Pow(1.3f, stage - 1));
         }
         else if (stage <= 10)
         {
-            // 의도: 몬스터 체력이 점차 올라가며, '딱 평균 정도'의 수식을 완성해야 한 방에 잡히는 구간
             float baseHP = 150f;
             targetHP = Mathf.RoundToInt(baseHP * Mathf.Pow(1.35f, stage - 1));
         }
         else
         {
-            // 의도: 몬스터 체력이 확 뛰는 게 아니라 완만하게 오르므로, 
-            // 플레이어가 평균보다 조금 더 잘 쳐주거나(중고점) 빌드를 갖추면 계속 밀고 나갈 수 있는 구간
-            int extraStage = stage - 15;
-            int baseAt15 = Mathf.RoundToInt(150f * Mathf.Pow(1.35f, 14));
+            // 11단계 이상부터는 10단계의 값을 기준으로 선형 증가하도록 수정
+            int baseAt10 = Mathf.RoundToInt(150f * Mathf.Pow(1.35f, 9)); // 약 2220
+            int extraStage = stage - 10;
 
-            targetHP = baseAt15 + (extraStage * 12000);
+            targetHP = baseAt10 + (extraStage * 12000);
         }
 
         return targetHP;

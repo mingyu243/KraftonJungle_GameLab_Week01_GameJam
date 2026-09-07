@@ -55,20 +55,24 @@ public class CalculationSequenceManager : MonoBehaviour
 
             await UniTask.WaitForSeconds(0.5f);
 
-            await PlayActionAsync();
-
-            await UniTask.WaitForSeconds(1.2f);
-
             // 정리
-            calculationResult.gameObject.SetActive(false);
-
             for (int i = 0; i < scoreBonusDescs.Length; i++)
             {
                 scoreBonusDescs[i].SetActive(false);
             }
 
+            await PlayActionAsync();
+
+            await UniTask.WaitForSeconds(1.2f);
+
+            // 정리
+            scoreManager.ClearScoreBonusText();
+
             // 잠시 내려갔다가
             await screenView.DOAnchorPosY(0f, 1.5f).ToUniTask();
+
+            // 정리
+            calculationResult.gameObject.SetActive(false);
         }
 
         await UniTask.CompletedTask;
