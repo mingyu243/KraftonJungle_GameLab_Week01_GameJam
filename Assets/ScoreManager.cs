@@ -1,67 +1,62 @@
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
+    [SerializeField] Transform scoreBonusPopParentTr;
+    [SerializeField] ScoreBonusPop scoreBonusPopPrefab;
+    [Space]
     [SerializeField] int numberCardBonus;
-    [SerializeField] int plusMinusCardBonus;
-    [SerializeField] int mulCardBonus;
-    public int Score;
+    [SerializeField] int operatorCardBonus;
+    [Space]
+    [SerializeField] int score;
 
     [Header("UI")]
-    [SerializeField] TMP_Text numberCardBonusText;
-    [SerializeField] TMP_Text plusMinusCardBonusText;
-    [SerializeField] TMP_Text mulCardBonusText;
     [SerializeField] TMP_Text scoreText;
 
-    void Start()
-    {
-        Init();
+    public int Score 
+    { 
+        get => score;
+        set
+        {
+            score = value;
+            scoreText.text = $"{Score}";
+        }
     }
 
     public void Init()
     {
         numberCardBonus = 0;
-        plusMinusCardBonus = 1;
-        mulCardBonus = 1;
+        operatorCardBonus = 1;
         Score = 0;
-
-        numberCardBonusText.text = $"{numberCardBonus}";
-        plusMinusCardBonusText.text = $"{plusMinusCardBonus}";
-        mulCardBonusText.text = $"{mulCardBonus}";
-        scoreText.text = $"{Score}";
     }
 
-    public void AddNumberCardBonus(int value)
+    public void AddNumberCardBonus(int value, Transform bonusPopPoint)
     {
         numberCardBonus += value;
-        numberCardBonusText.text = $"{numberCardBonus}";
-        numberCardBonusText.transform.DOPunchScale(Vector3.one * 1.3f, 0.2f, vibrato: 1, elasticity: 1f);
+
+        ScoreBonusPop newScoreBonusPop = Instantiate(scoreBonusPopPrefab, scoreBonusPopParentTr);
+        newScoreBonusPop.transform.position = bonusPopPoint.position;
+        newScoreBonusPop.ShowAsync($"+{value}").Forget();
 
         UpdateScore();
     }
-    public void AddPlusMinusCardBonus(int value)
+    public void MulOperatorCardBonus(int value, Transform bonusPopPoint)
     {
-        plusMinusCardBonus += value;
-        plusMinusCardBonusText.text = $"{plusMinusCardBonus}";
-        plusMinusCardBonusText.transform.DOPunchScale(Vector3.one * 1.3f, 0.2f, vibrato: 1, elasticity: 1f);
+        operatorCardBonus *= value;
 
-        UpdateScore();
-    }
-    public void MulMulCardBonus(int value)
-    {
-        mulCardBonus *= value;
-        mulCardBonusText.text = $"{mulCardBonus}";
-        mulCardBonusText.transform.DOPunchScale(Vector3.one * 1.3f, 0.2f, vibrato: 1, elasticity: 1f);
+        ScoreBonusPop newScoreBonusPop = Instantiate(scoreBonusPopPrefab, scoreBonusPopParentTr);
+        newScoreBonusPop.transform.position = bonusPopPoint.position;
+        newScoreBonusPop.ShowAsync($"x{value}").Forget();
 
         UpdateScore();
     }
 
     public void UpdateScore()
     {
-        Score = numberCardBonus * plusMinusCardBonus * mulCardBonus;
-        scoreText.text = $"{Score}";
+        Score = numberCardBonus * operatorCardBonus;
         scoreText.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f, vibrato: 1, elasticity: 1f);
     }
 }

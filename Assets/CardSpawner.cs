@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class CardSpawner : MonoBehaviour
@@ -11,10 +12,45 @@ public class CardSpawner : MonoBehaviour
     [Space]
     [SerializeField] int spawnColCount = 14;
     [SerializeField] int spawnRowCount = 2;
-    [SerializeField] float rowSpacing = 120;
+    [SerializeField] float rowSpacing = 145;
 
-    public void SetupCards()
+    public List<Card> SetupCards()
     {
+        // 카드 생성
+        List<Card> newCardList = new();
+
+        // 최소 보장
+        newCardList.Add(Spawn(new CardData() { CardCategory = CardCategory.Number, CardType = (CardType)1 }));
+        for (int i = 0; i < 2; i++)
+        {
+            // 숫자
+            for (int j = 2; j <= 9; j++)
+            {
+                newCardList.Add(Spawn(new CardData() { CardCategory = CardCategory.Number, CardType = (CardType)j }));
+            }
+
+            // 연산자
+            newCardList.Add(Spawn(new CardData() { CardCategory = CardCategory.Operator, CardType = CardType.Plus }));
+            newCardList.Add(Spawn(new CardData() { CardCategory = CardCategory.Operator, CardType = CardType.Minus }));
+            newCardList.Add(Spawn(new CardData() { CardCategory = CardCategory.Operator, CardType = CardType.Multiply }));
+        }
+
+        // 랜덤 생성
+        for (int i = newCardList.Count; i < spawnRowCount * spawnColCount; i++)
+        {
+            if (i % 2 == 0)
+            {
+                newCardList.Add(Spawn(CreateRandomNumberCardData()));
+            }
+            else
+            {
+                newCardList.Add(Spawn(CreateRandomOperatorCardData()));
+            }
+        }
+
+        newCardList = newCardList.OrderBy(x => Random.value).ToList();
+
+        // 배치
         float colGap = 0f;
         if (spawnColCount > 1)
         {
@@ -25,48 +61,44 @@ public class CardSpawner : MonoBehaviour
         {
             for (int c = 0; c < spawnColCount; c++)
             {
-                Vector3 spawnPos = startPoint.position + new Vector3(colGap * c, -rowSpacing * r, 0);
+                Card card = newCardList[(r * spawnColCount) + c];
 
-                Card newCard = SpawnRandom();
-                newCard.transform.SetParent(spawnParentTr);
-                newCard.transform.position = spawnPos;
+                Vector3 spawnPos = startPoint.position + new Vector3(colGap * c, -rowSpacing * r, 0);
+                card.transform.position = spawnPos;
             }
         }
-    }
 
-    public Card SpawnRandom()
-    {
-        return Spawn(CreateRandomCardData());
+        return newCardList;
     }
 
     public Card Spawn(CardData newCardData)
     {
         Card newCard = Instantiate(cardPrefab);
+        newCard.transform.SetParent(spawnParentTr);
         newCard.CardData = newCardData;
         newCard.UpdateUI();
 
         return newCard;
     }
 
-    CardData CreateRandomCardData()
+    CardData CreateRandomNumberCardData()
     {
         CardData newCardData = new CardData();
+        newCardData.CardCategory = CardCategory.Number;
 
-        int category = Random.Range(0, 2);
-        if (category == 0)
-        {
-            newCardData.CardCategory = CardCategory.Number;
+        int type = Random.Range(2, 10);
+        newCardData.CardType = (CardType)type;
 
-            int type = Random.Range(1, 10);
-            newCardData.CardType = (CardType)type;
-        }
-        else
-        {
-            newCardData.CardCategory = CardCategory.Operator;
+        return newCardData;
+    }
 
-            int type = Random.Range(10, 13);
-            newCardData.CardType = (CardType)type;
-        }
+    CardData CreateRandomOperatorCardData()
+    {
+        CardData newCardData = new CardData();
+        newCardData.CardCategory = CardCategory.Operator;
+
+        int type = Random.Range(10, 13);
+        newCardData.CardType = (CardType)type;
 
         return newCardData;
     }

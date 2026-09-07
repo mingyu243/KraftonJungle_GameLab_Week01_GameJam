@@ -27,20 +27,30 @@ public class CardSlot : MonoBehaviour
         }
     }
 
-    public void RemoveCard()
+    public void RemoveCard(bool withCheckExpression = false, bool destroyCardObject = false)
     {
         if (card != null)
         {
             // 이벤트 제거
             Draggable draggable = card.GetComponent<Draggable>();
             draggable.OnBeginDragEvent -= BeginDragEvent;
-            
+
+            if (destroyCardObject)
+            {
+                Destroy(card.gameObject);
+            }
+
             card = null;
+
+            if (withCheckExpression)
+            {
+                GameManager.Instance.CheckAnswerCurrentExpression();
+            }
         }
     }
 
     void BeginDragEvent(Draggable draggable)
     {
-        RemoveCard();
+        RemoveCard(true);
     }
 }

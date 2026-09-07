@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class ExpressionManager : MonoBehaviour
@@ -19,18 +20,50 @@ public class ExpressionManager : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(expression))
         {
+            Debug.Log($"공백이라 계산 X / {expression}");
+            return false;
+        }
+
+        // 첫번째에 숫자가 오는 지
+        if (!Regex.IsMatch(expression, @"^[ ]*[0-9]"))
+        {
+            Debug.Log($"첫번째에 숫자가 아니라서 계산 X / {expression}");
+            return false;
+        }
+
+        // 연산자가 2개 이상 연결되어 있으면 안 됨
+        if (Regex.IsMatch(expression, @"[\+\-\*/]\s*[\+\-\*/]"))
+        {
+            Debug.Log($"연산자가 2개 이상 연결되어있어서 계산 X / {expression}");
             return false;
         }
 
         try
         {
-            dataTable.Compute(expression, string.Empty);
+            int result = Convert.ToInt32(dataTable.Compute(expression, string.Empty));
+
+            Debug.Log($"계산 가능 / {expression} / result = {result}");
+
             return true;
         }
         catch
         {
+            Debug.Log($"계산 불가 / {expression}");
             return false;
         }
+    }
+
+    public bool CheckAnswerCurrentExpression()
+    {
+        bool isValid = IsValidExpression();
+
+        if (isValid)
+        {
+            int result = GetExpressionResult();
+            return CheckAnswer(result);
+        }
+
+        return false;
     }
 
     // 수식이 정답인지
@@ -43,6 +76,7 @@ public class ExpressionManager : MonoBehaviour
     public int GetExpressionResult()
     {
         string expression = GetExpression();
+
         int result = Convert.ToInt32(dataTable.Compute(expression, string.Empty));
 
         return result;

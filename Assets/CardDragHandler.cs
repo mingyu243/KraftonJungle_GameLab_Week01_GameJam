@@ -1,7 +1,7 @@
 using DG.Tweening;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CardDragHandler : MonoBehaviour
 {
@@ -156,16 +156,9 @@ public class CardDragHandler : MonoBehaviour
         {
             if (tempCards[i] != null)
             {
-                try
-                {
-                    int originIndex = previewCardSlotIndexDict[tempCards[i]].Item1;
-                    int previewIndex = previewCardSlotIndexDict[tempCards[i]].Item2;
-                    CardSlotList[previewIndex].SetCard(tempCards[originIndex]);
-                }
-                catch (Exception e)
-                {
-
-                }
+                int originIndex = previewCardSlotIndexDict[tempCards[i]].Item1;
+                int previewIndex = previewCardSlotIndexDict[tempCards[i]].Item2;
+                CardSlotList[previewIndex].SetCard(tempCards[originIndex]);
             }
         }
 
@@ -179,6 +172,9 @@ public class CardDragHandler : MonoBehaviour
         }
 
         previewTargetSlotIndex = -1;
+
+        // 수식 결과가 정답이면 엔터 버튼 활성화
+        GameManager.Instance.CheckAnswerCurrentExpression();
     }
 
     public int FindClosestSlotIndex(Vector2 point)

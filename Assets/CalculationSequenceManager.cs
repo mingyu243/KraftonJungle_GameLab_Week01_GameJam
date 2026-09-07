@@ -6,6 +6,11 @@ using UnityEngine;
 
 public class CalculationSequenceManager : MonoBehaviour
 {
+    [Header("Action")]
+    [SerializeField] Player player;
+    [SerializeField] Enemy enemy;
+    [SerializeField] RectTransform shakePanelTr;
+
     [Header("UI")]
     [SerializeField] GameObject calculationResult;
     [SerializeField] TMP_Text calculationResultText;
@@ -15,6 +20,7 @@ public class CalculationSequenceManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] CardSlotManager cardSlotManager;
+    [SerializeField] CardBoardManager cardBoardManager;
     [SerializeField] ExpressionManager expressionManager;
     [SerializeField] ScoreManager scoreManager;
 
@@ -22,9 +28,42 @@ public class CalculationSequenceManager : MonoBehaviour
 
     public async UniTask PlayAsync()
     {
-        List<UniTask> tempTasks = new List<UniTask>();
+        int result = await ExpressionCalculationAsync();
 
-        // 계산하는 연출
+        bool isCorrect = expressionManager.CheckAnswer(result);
+
+        //if (isCorrect)
+        if (true)
+        {
+            await ExpressionCorrectAsync();
+
+            await UniTask.WaitForSeconds(0.5f);
+
+            await FocusActionAsync();
+
+            await UniTask.WaitForSeconds(0.5f);
+
+            await ScoreCalculationAsync();
+
+            await UniTask.WaitForSeconds(0.5f);
+
+            await PlayActionAsync();
+
+            await UniTask.WaitForSeconds(1.5f);
+
+            // 잠시 내려갔다가
+            await screenView.DOAnchorPosY(0f, 1.5f).ToUniTask();
+
+            // 정리
+            calculationResult.gameObject.SetActive(false);
+        }
+
+        await UniTask.CompletedTask;
+    }
+
+    public async UniTask<int> ExpressionCalculationAsync()
+    {
+        List<UniTask> tasks = new List<UniTask>();
 
         // 수식 카드들이 떨림
         for (int i = 0; i < CardSlotList.Count; i++)
@@ -32,7 +71,7 @@ public class CalculationSequenceManager : MonoBehaviour
             Card card = CardSlotList[i].Card;
             if (card != null)
             {
-                tempTasks.Add(card.transform.DOShakePosition(5f, new Vector3(5f, 5f, 0f), 20).ToUniTask());
+                tasks.Add(card.transform.DOShakePosition(3f, new Vector3(5f, 5f, 0f), 20).ToUniTask());
             }
         }
         // 계산 결과 천천히 오름
@@ -42,84 +81,63 @@ public class CalculationSequenceManager : MonoBehaviour
         int result = expressionManager.GetExpressionResult();
 
         int currentVal = 0;
-        tempTasks.Add(DOVirtual.Int(0, result, 5f, value =>
-            {
-                currentVal = value;
-                calculationResultText.text = $"{currentVal}";
-            })
+        tasks.Add(DOVirtual.Int(0, result, 3f, value =>
+        {
+            currentVal = value;
+            calculationResultText.text = $"{currentVal}";
+        })
             .SetEase(Ease.OutExpo)
             .ToUniTask()
         );
-        await UniTask.WhenAll(tempTasks);
-        tempTasks.Clear();
+        await UniTask.WhenAll(tasks);
 
-        // 정답 판별
-        bool isCorrect = expressionManager.CheckAnswer(result);
+        return result;
+    }
 
-        // 정답!
-        //if (isCorrect)
-        if (true)
+    public async UniTask ScoreCalculationAsync()
+    {
+        List<UniTask> tasks = new List<UniTask>();
+
+        // 점수 정산
+
+        // 숫자 카드 필터링
+        List<CardSlot> tempCardSlotList = new List<CardSlot>();
+        for (int i = 0; i < CardSlotList.Count; i++)
         {
-            // 수식 카드들 빰!
-            for (int i = 0; i < CardSlotList.Count; i++)
+            CardSlot cardSlot = CardSlotList[i];
+            Card card = cardSlot.Card;
+            if (card != null)
             {
-                Card card = CardSlotList[i].Card;
-                if (card != null)
+                if (card.CardData.CardCategory == CardCategory.Number)
                 {
-                    tempTasks.Add(card.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+                    tempCardSlotList.Add(cardSlot);
                 }
             }
-            // 계산 결과 빰!
-            tempTasks.Add(calculationResultText.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
-         
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 연출을 강조하기 위해서 UI 내리기
-            tempTasks.Add(screenView.DOLocalMoveY(-420f, 1.5f).SetEase(screenViewDownCurve).ToUniTask());
-
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 점수 정산
-
-            // 숫자 카드 필터링
-            List<Card> tempCardList = new List<Card>();
-            for (int i = 0; i < CardSlotList.Count; i++)
-            {
-                Card card = CardSlotList[i].Card;
-                if (card != null)
-                {
-                    if (card.CardData.CardCategory == CardCategory.Number)
-                    {
-                        tempCardList.Add(card);
-                    }
-                }
-            }
-
+        }
+        if (tempCardSlotList.Count > 0)
+        {
             // 위로 올려줌
-            for (int i = 0; i < tempCardList.Count; i++)
+            for (int i = 0; i < tempCardSlotList.Count; i++)
             {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
+                tasks.Add(cardSlot.transform.DOLocalMoveY(cardSlot.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                tasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
             }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
+            await UniTask.WhenAll(tasks);
+            tasks.Clear();
 
             await UniTask.WaitForSeconds(0.5f);
 
             // 하나씩 정산
-            for (int i = 0; i < tempCardList.Count; i++)
+            for (int i = 0; i < tempCardSlotList.Count; i++)
             {
-                Card card = tempCardList[i];
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
 
                 UniTask.Void(async () =>
                 {
-                    await UniTask.WaitForSeconds(0.07f);
+                    await UniTask.WaitForSeconds(0.09f);
 
                     int bonus = 0;
                     switch (card.CardData.CardType)
@@ -137,149 +155,183 @@ public class CalculationSequenceManager : MonoBehaviour
                         default:
                             break;
                     }
-                    scoreManager.AddNumberCardBonus(bonus);
+                    scoreManager.AddNumberCardBonus(bonus, cardSlot.transform);
+                    player.Atk = scoreManager.Score;
                 });
 
-                await card.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f);
+                tasks.Add(cardSlot.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+                tasks.Add(card.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+
+                await UniTask.WhenAll(tasks);
+                tasks.Clear();
             }
 
             await UniTask.WaitForSeconds(0.5f);
 
             // 내려줌
-            for (int i = 0; i < tempCardList.Count; i++)
+            for (int i = 0; i < tempCardSlotList.Count; i++)
             {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
+                tasks.Add(cardSlot.transform.DOLocalMoveY(cardSlot.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                tasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
             }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
+            await UniTask.WhenAll(tasks);
+            tasks.Clear();
 
-            tempCardList.Clear();
-
-            // 연산자 카드 (+, -) 필터링
-            for (int i = 0; i < CardSlotList.Count; i++)
-            {
-                Card card = CardSlotList[i].Card;
-                if (card != null)
-                {
-                    if (card.CardData.CardCategory == CardCategory.Operator)
-                    {
-                        if (card.CardData.CardType == CardType.Plus || card.CardData.CardType == CardType.Minus)
-                        {
-                            tempCardList.Add(card);
-                        }
-                    }
-                }
-            }
-
-            // 위로 올려줌
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
-            }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 하나씩 정산
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-
-                UniTask.Void(async () =>
-                {
-                    await UniTask.WaitForSeconds(0.07f);
-                    scoreManager.AddPlusMinusCardBonus(1);
-                });
-
-                await card.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f);
-
-            }
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 내려줌
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
-            }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            tempCardList.Clear();
-
-            // 연산자 카드 (*) 필터링
-            for (int i = 0; i < CardSlotList.Count; i++)
-            {
-                Card card = CardSlotList[i].Card;
-                if (card != null)
-                {
-                    if (card.CardData.CardCategory == CardCategory.Operator)
-                    {
-                        if (card.CardData.CardType == CardType.Multiply)
-                        {
-                            tempCardList.Add(card);
-                        }
-                    }
-                }
-            }
-
-            // 위로 올려줌
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
-            }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 하나씩 정산
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-
-                UniTask.Void(async () =>
-                {
-                    await UniTask.WaitForSeconds(0.07f);
-                    scoreManager.MulMulCardBonus(2);
-                });
-
-                await card.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f);
-
-            }
-
-            await UniTask.WaitForSeconds(0.5f);
-
-            // 내려줌
-            for (int i = 0; i < tempCardList.Count; i++)
-            {
-                Card card = tempCardList[i];
-                tempTasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
-            }
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
-
-            tempCardList.Clear();
-
-            // 공격 연출
-            await UniTask.WaitForSeconds(3);
-
-            // 보드 정리하기
-
-            // 다시 UI 올리기
-            tempTasks.Add(screenView.DOLocalMoveY(0f, 1.5f).SetEase(Ease.OutQuart).ToUniTask());
-            await UniTask.WhenAll(tempTasks);
-            tempTasks.Clear();
+            tempCardSlotList.Clear();
         }
 
-        await UniTask.WaitForSeconds(3);
-        calculationResult.gameObject.SetActive(false);
+        // 연산자 카드 필터링
+        for (int i = 0; i < CardSlotList.Count; i++)
+        {
+            CardSlot cardSlot = CardSlotList[i];
+            Card card = cardSlot.Card;
+            if (card != null)
+            {
+                if (card.CardData.CardCategory == CardCategory.Operator)
+                {
+                    tempCardSlotList.Add(cardSlot);
+                }
+            }
+        }
+        if (tempCardSlotList.Count > 0)
+        {
+            // 위로 올려줌
+            for (int i = 0; i < tempCardSlotList.Count; i++)
+            {
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
+                tasks.Add(cardSlot.transform.DOLocalMoveY(cardSlot.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                tasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y + 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+            }
+            await UniTask.WhenAll(tasks);
+            tasks.Clear();
 
-        await UniTask.CompletedTask;
+            await UniTask.WaitForSeconds(0.5f);
+
+            // 하나씩 정산
+            for (int i = 0; i < tempCardSlotList.Count; i++)
+            {
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
+
+                UniTask.Void(async () =>
+                {
+                    await UniTask.WaitForSeconds(0.09f);
+                    scoreManager.MulOperatorCardBonus(2, cardSlot.transform);
+                    player.Atk = scoreManager.Score;
+                });
+
+                tasks.Add(cardSlot.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+                tasks.Add(card.transform.DOPunchScale(Vector3.one * 0.5f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+
+                await UniTask.WhenAll(tasks);
+                tasks.Clear();
+            }
+
+            await UniTask.WaitForSeconds(0.3f);
+
+            // 내려줌
+            for (int i = 0; i < tempCardSlotList.Count; i++)
+            {
+                CardSlot cardSlot = tempCardSlotList[i];
+                Card card = cardSlot.Card;
+                tasks.Add(cardSlot.transform.DOLocalMoveY(cardSlot.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+                tasks.Add(card.transform.DOLocalMoveY(card.transform.localPosition.y - 50, 0.2f).SetDelay(i * 0.06f).ToUniTask());
+            }
+            await UniTask.WhenAll(tasks);
+        }
+    }
+
+    public async UniTask ExpressionCorrectAsync()
+    {
+        List<UniTask> tasks = new List<UniTask>();
+
+        // 수식 카드들 빰!
+        for (int i = 0; i < CardSlotList.Count; i++)
+        {
+            Card card = CardSlotList[i].Card;
+            if (card != null)
+            {
+                tasks.Add(card.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+            }
+        }
+        // 계산 결과 빰!
+        tasks.Add(calculationResultText.transform.DOPunchScale(Vector3.one * 0.3f, 0.2f, vibrato: 1, elasticity: 1f).ToUniTask());
+
+        await UniTask.WhenAll(tasks);
+    }
+
+    public async UniTask FocusActionAsync()
+    {
+        // 연출을 강조하기 위해서 UI 내리기
+        await screenView.DOAnchorPosY(180f, 1.5f).SetEase(screenViewDownCurve).ToUniTask();
+    }
+
+    public async UniTask PlayActionAsync()
+    {
+        // 플레이어 공격
+        int playerPower = scoreManager.Score;
+        await player.AttackAnimAsync();
+
+        enemy.Health = enemy.Health - playerPower;
+
+        if (enemy.Health <= 0)
+        {
+            // 타격감
+            UniTask.Void(async () =>
+            {
+                Time.timeScale = 0.02f;
+                shakePanelTr.DOShakeAnchorPos(0.15f, new Vector3(15f, 15f, 0f), 20, 90f).SetUpdate(true).ToUniTask().Forget();
+                await UniTask.WaitForSeconds(0.7f, true);
+                Time.timeScale = 1f;
+            });
+            await enemy.DieAnimAsync();
+        }
+        else
+        {
+            // 타격감
+            UniTask.Void(async () =>
+            {
+                Time.timeScale = 0.02f;
+                shakePanelTr.DOShakeAnchorPos(0.15f, new Vector3(15f, 15f, 0f), 20, 90f).SetUpdate(true).ToUniTask().Forget();
+                await UniTask.WaitForSeconds(0.3f, true);
+                Time.timeScale = 1f;
+            });
+            await enemy.TakeDamageAnimAsync(playerPower);
+
+            // 적 공격
+            await enemy.AttackAnimAsync();
+
+            player.Health -= 1;
+            GameManager.Instance.Life = player.Health;
+
+            // 플레이어 사망
+            if (player.Health <= 0)
+            {
+                // 타격감
+                UniTask.Void(async () =>
+                {
+                    Time.timeScale = 0.02f;
+                    shakePanelTr.DOShakeAnchorPos(0.15f, new Vector3(15f, 15f, 0f), 20, 90f).SetUpdate(true).ToUniTask().Forget();
+                    await UniTask.WaitForSeconds(0.7f, true);
+                    Time.timeScale = 1f;
+                });
+                await player.DieAnimAsync();
+            }
+            else
+            {
+                // 타격감
+                UniTask.Void(async () =>
+                {
+                    Time.timeScale = 0.02f;
+                    shakePanelTr.DOShakeAnchorPos(0.15f, new Vector3(15f, 15f, 0f), 20, 90f).SetUpdate(true).ToUniTask().Forget();
+                    await UniTask.WaitForSeconds(0.3f, true);
+                    Time.timeScale = 1f;
+                });
+                await player.TakeDamageAnimAsync();
+            }
+        }
     }
 }
